@@ -1,0 +1,32 @@
+# === Ignore unnecessary folders ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.parquet
+*.ipynb
+*.db
+*.zip
+*.tar
+*.gz
+
+# === Local development or training artifacts (exclude) ===
+notebooks/
+outputs/
+training_data/
+model.ipynb
+
+# === Git and environments ===
+.git/
+.gitignore
+.venv/
+env/
+venv/
+.idea/
+.vscode/
+.env
+
+# === OS files ===
+.DS_Store
+Thumbs.db

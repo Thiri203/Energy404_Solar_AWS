@@ -1,0 +1,46 @@
+name: 🚀 Deploy to DigitalOcean Droplet
+
+on:
+  push:
+    branches:
+      - main  # Trigger deployment only when code is pushed to main
+
+jobs:
+  deploy:
+    name: Deploy to DigitalOcean
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🔐 Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.DO_SSH_KEY }}
+
+      - name: 🐳 Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: 🌍 Connect to DigitalOcean Droplet and Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} << 'EOF'
+          echo "🔹 Pulling latest Docker images..."
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/energy404-backend:latest
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/energy404-frontend:latest
+
+          echo "🔹 Stopping old containers if they exist..."
+          docker stop energy404_backend  true
+          docker rm energy404_backend  true
+          docker stop energy404_frontend  true
+          docker rm energy404_frontend  true
+
+          echo "🔹 Starting new containers..."
+          docker run -d --name energy404_backend -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/energy404-backend:latest
+          docker run -d --name energy404_frontend -p 8050:8050 \
+            --env API_BASE_URL=http://$(hostname -I | awk '{print $1}'):8000 \
+            ${{ secrets.DOCKERHUB_USERNAME }}/energy404-frontend:latest
+
+          echo "✅ Deployment complete!"
+          docker ps
+          EOF

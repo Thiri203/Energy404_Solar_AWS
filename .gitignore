@@ -1,0 +1,21 @@
+# Ignore large models
+models/
+models_local_backup/
+
+# Ignore virtual env and caches
+.venv/
+__pycache__/
+*.pkl
+*.parquet
+.uv/
+.python-version
+pyproject.toml
+uv.lock
+
+
+
+# Ignore compiled files
+*.pyc
+.DS_Store
+
+

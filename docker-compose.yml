@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: energy404_backend
+    platform: linux/amd64
+    ports:
+      - "8000:8000"
+    command: uvicorn api:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    networks:
+      - energy404_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: energy404_frontend
+    platform: linux/amd64
+    depends_on:
+      - backend
+    environment:
+      - API_BASE_URL=http://backend:8000
+    ports:
+      - "8050:8050"
+    command: python energy_dash.py
+    restart: unless-stopped
+    networks:
+      - energy404_network
+
+networks:
+  energy404_network:
+    driver: bridge
