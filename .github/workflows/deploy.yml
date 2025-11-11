@@ -32,7 +32,7 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE }}
           debug: true
           script: |
-            cd ENERGY_404_AWS
+            cd Energy-404/ENERGY_404_AWS
             sudo systemctl enable docker
             docker pull annasus10/energy404-backend:latest
             docker pull annasus10/energy404-frontend:latest
