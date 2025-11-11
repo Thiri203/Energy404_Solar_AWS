@@ -1,46 +1,43 @@
-name: 🚀 Deploy to DigitalOcean Droplet
-
+name: SolarCICD
 on:
   push:
     branches:
-      - main  # Trigger deployment only when code is pushed to main
-
+      - main
 jobs:
   deploy:
-    name: Deploy to DigitalOcean
     runs-on: ubuntu-latest
 
+    env:
+      GIT_TERMINAL_PROMPT: 0
+      GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
+
     steps:
-      - name: 🧩 Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: 🔐 Set up SSH agent
-        uses: webfactory/ssh-agent@v0.8.0
         with:
-          ssh-private-key: ${{ secrets.DO_SSH_KEY }}
+          persist-credentials: false
+          fetch-depth: 0
 
-      - name: 🐳 Log in to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-
-      - name: 🌍 Connect to DigitalOcean Droplet and Deploy
+      - name: Configure Git
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} << 'EOF'
-          echo "🔹 Pulling latest Docker images..."
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/energy404-backend:latest
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/energy404-frontend:latest
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions Bot"
 
-          echo "🔹 Stopping old containers if they exist..."
-          docker stop energy404_backend  true
-          docker rm energy404_backend  true
-          docker stop energy404_frontend  true
-          docker rm energy404_frontend  true
-
-          echo "🔹 Starting new containers..."
-          docker run -d --name energy404_backend -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/energy404-backend:latest
-          docker run -d --name energy404_frontend -p 8050:8050 \
-            --env API_BASE_URL=http://$(hostname -I | awk '{print $1}'):8000 \
-            ${{ secrets.DOCKERHUB_USERNAME }}/energy404-frontend:latest
-
-          echo "✅ Deployment complete!"
-          docker ps
-          EOF
+      - name: Deploy to DigitalOcean Droplet
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          debug: true
+          script: |
+            cd ENERGY_404_AWS
+            sudo systemctl enable docker
+            docker pull annasus10/energy404-backend:latest
+            docker pull annasus10/energy404-frontend:latest
+            docker stop $(docker ps -q)
+            sudo kill -9 $(sudo lsof -t -i:8080)
+            docker-compose up -d --build
+            
+        
